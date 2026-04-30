@@ -8,6 +8,8 @@ import {
 } from "@/components/settings/user-row-actions";
 import { UserPermissionsEditor } from "@/components/settings/user-permissions-editor";
 import { ResetPasswordButton } from "@/components/settings/reset-password-button";
+import { EditUserButton } from "@/components/settings/edit-user-button";
+import { DeleteUserButton } from "@/components/settings/delete-user-button";
 import type { MenuKey } from "@/lib/actions/auth";
 import {
   Table,
@@ -26,7 +28,7 @@ import { APP_NAME } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  await requireMenu("settings");
+  const me = await requireMenu("settings");
   const { data: users, error } = await listUsers();
 
   return (
@@ -88,7 +90,7 @@ export default async function SettingsPage() {
               <TableHead>สิทธิเมนู</TableHead>
               <TableHead>เปิดใช้งาน</TableHead>
               <TableHead>เพิ่มเมื่อ</TableHead>
-              <TableHead className="w-12" />
+              <TableHead className="w-32 text-right">การกระทำ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -96,6 +98,7 @@ export default async function SettingsPage() {
               const username = (u.email ?? "").includes("@gear.local")
                 ? u.email.replace("@gear.local", "")
                 : u.email;
+              const isSelf = u.id === me.id;
               return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.full_name}</TableCell>
@@ -119,10 +122,23 @@ export default async function SettingsPage() {
                     {formatDateShort(u.created_at)}
                   </TableCell>
                   <TableCell>
-                    <ResetPasswordButton
-                      userId={u.id}
-                      userName={u.full_name}
-                    />
+                    <div className="flex items-center justify-end gap-0.5">
+                      <EditUserButton
+                        userId={u.id}
+                        currentName={u.full_name}
+                        currentPhone={u.phone ?? ""}
+                        currentUsername={username}
+                      />
+                      <ResetPasswordButton
+                        userId={u.id}
+                        userName={u.full_name}
+                      />
+                      <DeleteUserButton
+                        userId={u.id}
+                        userName={u.full_name}
+                        disabled={isSelf}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               );

@@ -136,3 +136,49 @@ export async function resetUserPassword(
   if (error) return { error: error.message };
   return { data: { ok: true } };
 }
+
+export async function updateUser(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const me = await getCurrentUserWithRole();
+  if (me?.profile.role !== "admin") return { error: "เฉพาะผู้ดูแลระบบ" };
+
+  const full_name = String(formData.get("full_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
+  const usernameRaw = String(formData.get("username") ?? "").trim();
+  if (!full_name) return { error: "กรุณาระบุชื่อ" };
+
+  const supabase = await createServer();
+  const update: Record<string, unknown> = { full_name, phone };
+  if (usernameRaw) {
+    update.email = toLoginEmail(usernameRaw);
+  }
+  const { error } = await supabase.from("profiles").update(update).eq("id", id);
+  if (error) return { error: error.message };
+
+  // ถ้าเปลี่ยน username ก็อัปเดตใน auth.users ด้วย
+  if (usernameRaw) {
+    const admin = createAdminClient();
+    await admin.auth.admin.updateUserById(id, {
+      email: toLoginEmail(usernameRaw),
+    });
+  }
+
+  revalidatePath("/settings");
+  return { data: { ok: true } };
+}
+
+export async function deleteUser(id: string): Promise<ActionResult> {
+  const me = await getCurrentUserWithRole();
+  if (me?.profile.role !== "admin") return { error: "เฉพาะผู้ดูแลระบบ" };
+  if (me.id === id) return { error: "ลบบัญชีของตัวเองไม่ได้" };
+
+  const admin = createAdminClient();
+  // FK on profiles uses ON DELETE CASCADE จาก auth.users → ลบ profile อัตโนมัติ
+  const { error } = await admin.auth.admin.deleteUser(id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/settings");
+  return { data: { ok: true } };
+}
