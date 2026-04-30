@@ -34,14 +34,16 @@ export function Topbar({
   fullName,
   email,
   role,
+  permissions,
 }: {
   fullName: string;
   email: string;
   role: Role;
+  permissions: import("@/lib/actions/auth").MenuKey[];
 }) {
   return (
     <header className="bg-background/85 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur sm:px-6">
-      <MobileNav role={role} />
+      <MobileNav permissions={permissions} />
       <div className="flex-1" />
       <CommandPaletteTrigger />
 

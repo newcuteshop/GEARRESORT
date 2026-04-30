@@ -1,5 +1,5 @@
 import { Layers } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listRoomTypesWithCount, listRoomTypes } from "@/lib/actions/rooms";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -32,7 +32,7 @@ type RoomTypeRow = {
 };
 
 export default async function RoomTypesPage() {
-  await requireRole(["admin"]);
+  await requireMenu("rooms_types");
   const [{ data: types, error }, { data: typeOptions }] = await Promise.all([
     listRoomTypesWithCount(),
     listRoomTypes(),

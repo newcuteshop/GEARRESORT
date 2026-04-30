@@ -13,9 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "./sidebar-nav";
 import { APP_NAME } from "@/lib/constants";
-import type { Role } from "@/lib/auth/rbac";
+import type { MenuKey } from "@/lib/actions/auth";
 
-export function MobileNav({ role }: { role: Role }) {
+export function MobileNav({ permissions }: { permissions: MenuKey[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -53,7 +53,10 @@ export function MobileNav({ role }: { role: Role }) {
           </SheetTitle>
         </SheetHeader>
         <div className="px-4 py-3">
-          <SidebarNav role={role} onNavigate={() => setOpen(false)} />
+          <SidebarNav
+            permissions={permissions}
+            onNavigate={() => setOpen(false)}
+          />
         </div>
       </SheetContent>
     </Sheet>

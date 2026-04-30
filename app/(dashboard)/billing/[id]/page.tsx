@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import {
   getInvoice,
   listInvoiceItems,
@@ -47,7 +47,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 export default async function InvoiceDetailPage(props: {
   params: Promise<Params>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("billing");
   const { id } = await props.params;
   const [{ data: invoice, error }, { data: items }, { data: payments }] =
     await Promise.all([

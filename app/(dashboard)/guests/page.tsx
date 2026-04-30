@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listGuests } from "@/lib/actions/guests";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -24,7 +24,7 @@ type SearchParams = { q?: string };
 export default async function GuestsPage(props: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("guests");
   const sp = await props.searchParams;
   const { data, error } = await listGuests(sp.q);
   const guests = data ?? [];

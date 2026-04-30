@@ -3,11 +3,12 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { toLoginEmail } from "@/lib/auth/username";
 import type { Role } from "@/lib/auth/rbac";
 
 const loginSchema = z.object({
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
-  password: z.string().min(6, "รหัสผ่านอย่างน้อย 6 ตัวอักษร"),
+  email: z.string().min(1, "กรุณาระบุชื่อผู้ใช้"),
+  password: z.string().min(1, "กรุณาระบุรหัสผ่าน"),
 });
 
 export async function loginAction(_prev: unknown, formData: FormData) {
@@ -17,14 +18,17 @@ export async function loginAction(_prev: unknown, formData: FormData) {
   });
 
   if (!parsed.success) {
-    return { error: "ข้อมูลไม่ถูกต้อง" };
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    email: toLoginEmail(parsed.data.email),
+    password: parsed.data.password,
+  });
 
   if (error) {
-    return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+    return { error: "ผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   }
 
   redirect("/");
@@ -35,6 +39,16 @@ export async function logoutAction() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+export type MenuKey =
+  | "dashboard"
+  | "bookings"
+  | "rooms"
+  | "rooms_types"
+  | "guests"
+  | "billing"
+  | "housekeeping"
+  | "settings";
 
 export type CurrentUser = {
   id: string;
@@ -47,6 +61,7 @@ export type CurrentUser = {
     avatar_url: string | null;
     role: Role;
     is_active: boolean;
+    permissions: MenuKey[];
   };
 };
 
@@ -65,5 +80,28 @@ export async function getCurrentUserWithRole(): Promise<CurrentUser | null> {
 
   if (!profile) return null;
 
-  return { id: user.id, email: user.email, profile };
+  // Admin sees everything regardless of permissions array
+  const allMenus: MenuKey[] = [
+    "dashboard",
+    "bookings",
+    "rooms",
+    "rooms_types",
+    "guests",
+    "billing",
+    "housekeeping",
+    "settings",
+  ];
+  const rawPermissions = (profile.permissions ?? []) as string[];
+  const permissions =
+    profile.role === "admin"
+      ? allMenus
+      : (rawPermissions.filter((p) =>
+          allMenus.includes(p as MenuKey),
+        ) as MenuKey[]);
+
+  return {
+    id: user.id,
+    email: user.email,
+    profile: { ...profile, permissions },
+  };
 }

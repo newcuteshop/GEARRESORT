@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { SidebarNav } from "./sidebar-nav";
 import { APP_NAME } from "@/lib/constants";
-import type { Role } from "@/lib/auth/rbac";
+import type { MenuKey } from "@/lib/actions/auth";
 
-export function AppSidebar({ role }: { role: Role }) {
+export function AppSidebar({ permissions }: { permissions: MenuKey[] }) {
   return (
     <aside className="bg-sidebar border-sidebar-border hidden w-[260px] shrink-0 flex-col border-r lg:flex">
       <Link href="/" className="flex h-16 items-center gap-3 px-6">
@@ -18,7 +18,7 @@ export function AppSidebar({ role }: { role: Role }) {
         </div>
       </Link>
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <SidebarNav role={role} />
+        <SidebarNav permissions={permissions} />
       </div>
       <div className="border-sidebar-border border-t px-6 py-3">
         <p className="text-muted-foreground text-[10px] tracking-widest uppercase">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listBookings } from "@/lib/actions/bookings";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -63,7 +63,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 export default async function BookingsListPage(props: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("bookings");
   const sp = await props.searchParams;
   const { data, error } = await listBookings({ status: sp.status });
   const bookings = ((data as BookingRow[] | null) ?? []) as BookingRow[];

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Receipt, Pencil } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { getBooking, getBookingInvoice } from "@/lib/actions/bookings";
 import { PageHeader } from "@/components/shared/page-header";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/components/shared/status-badge";
@@ -22,7 +22,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 export default async function BookingDetailPage(props: {
   params: Promise<Params>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("bookings");
   const { id } = await props.params;
   const [{ data: booking, error }, { data: invoice }] = await Promise.all([
     getBooking(id),

@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listUsers } from "@/lib/actions/users";
 import { PageHeader } from "@/components/shared/page-header";
 import { InviteUserForm } from "@/components/settings/invite-user-form";
@@ -6,6 +6,9 @@ import {
   UserRoleSelect,
   UserActiveSwitch,
 } from "@/components/settings/user-row-actions";
+import { UserPermissionsEditor } from "@/components/settings/user-permissions-editor";
+import { ResetPasswordButton } from "@/components/settings/reset-password-button";
+import type { MenuKey } from "@/lib/actions/auth";
 import {
   Table,
   TableBody,
@@ -23,7 +26,7 @@ import { APP_NAME } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  await requireRole(["admin"]);
+  await requireMenu("settings");
   const { data: users, error } = await listUsers();
 
   return (
@@ -80,30 +83,50 @@ export default async function SettingsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>ชื่อ</TableHead>
-              <TableHead>อีเมล</TableHead>
+              <TableHead>ผู้ใช้</TableHead>
               <TableHead>บทบาท</TableHead>
+              <TableHead>สิทธิเมนู</TableHead>
               <TableHead>เปิดใช้งาน</TableHead>
               <TableHead>เพิ่มเมื่อ</TableHead>
+              <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(users ?? []).map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.full_name}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {u.email}
-                </TableCell>
-                <TableCell>
-                  <UserRoleSelect userId={u.id} current={u.role} />
-                </TableCell>
-                <TableCell>
-                  <UserActiveSwitch userId={u.id} active={u.is_active} />
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateShort(u.created_at)}
-                </TableCell>
-              </TableRow>
-            ))}
+            {(users ?? []).map((u) => {
+              const username = (u.email ?? "").includes("@gear.local")
+                ? u.email.replace("@gear.local", "")
+                : u.email;
+              return (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.full_name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {username}
+                  </TableCell>
+                  <TableCell>
+                    <UserRoleSelect userId={u.id} current={u.role} />
+                  </TableCell>
+                  <TableCell>
+                    <UserPermissionsEditor
+                      userId={u.id}
+                      role={u.role}
+                      current={(u.permissions ?? []) as MenuKey[]}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <UserActiveSwitch userId={u.id} active={u.is_active} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDateShort(u.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <ResetPasswordButton
+                      userId={u.id}
+                      userName={u.full_name}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

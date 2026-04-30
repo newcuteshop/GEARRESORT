@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listGuests } from "@/lib/actions/guests";
 import { PageHeader } from "@/components/shared/page-header";
 import { BookingForm } from "@/components/bookings/booking-form";
@@ -13,7 +13,7 @@ type SearchParams = { guestId?: string; date?: string };
 export default async function NewBookingPage(props: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("bookings");
   const sp = await props.searchParams;
   const { data } = await listGuests();
   const guests = (data ?? []).map((g) => ({

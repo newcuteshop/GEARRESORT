@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Receipt } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { listInvoices } from "@/lib/actions/billing";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -59,7 +59,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 export default async function BillingPage(props: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("billing");
   const sp = await props.searchParams;
   const { data, error } = await listInvoices({ status: sp.status });
   const invoices = ((data as InvoiceRow[] | null) ?? []) as InvoiceRow[];

@@ -14,30 +14,52 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Role } from "@/lib/auth/rbac";
+import type { MenuKey } from "@/lib/actions/auth";
 
 type NavItem = {
+  key: MenuKey;
   label: string;
   href: string;
   icon: LucideIcon;
-  roles: Role[];
 };
 
-const NAV: NavItem[] = [
-  { label: "ภาพรวม", href: "/", icon: LayoutDashboard, roles: ["admin", "receptionist", "housekeeping"] },
-  { label: "การจอง", href: "/bookings", icon: CalendarDays, roles: ["admin", "receptionist"] },
-  { label: "ห้องพัก", href: "/rooms", icon: BedDouble, roles: ["admin", "receptionist", "housekeeping"] },
-  { label: "ประเภทห้อง", href: "/rooms/types", icon: Layers, roles: ["admin"] },
-  { label: "ลูกค้า", href: "/guests", icon: Users, roles: ["admin", "receptionist"] },
-  { label: "ใบแจ้งหนี้", href: "/billing", icon: Receipt, roles: ["admin", "receptionist"] },
-  { label: "แม่บ้าน", href: "/housekeeping", icon: Sparkles, roles: ["admin", "receptionist", "housekeeping"] },
-  { label: "ตั้งค่า", href: "/settings", icon: Settings, roles: ["admin"] },
+export const NAV_ITEMS: NavItem[] = [
+  { key: "dashboard", label: "ภาพรวม", href: "/", icon: LayoutDashboard },
+  { key: "bookings", label: "การจอง", href: "/bookings", icon: CalendarDays },
+  { key: "rooms", label: "ห้องพัก", href: "/rooms", icon: BedDouble },
+  {
+    key: "rooms_types",
+    label: "ประเภทห้อง",
+    href: "/rooms/types",
+    icon: Layers,
+  },
+  { key: "guests", label: "ลูกค้า", href: "/guests", icon: Users },
+  { key: "billing", label: "ใบแจ้งหนี้", href: "/billing", icon: Receipt },
+  {
+    key: "housekeeping",
+    label: "แม่บ้าน",
+    href: "/housekeeping",
+    icon: Sparkles,
+  },
+  { key: "settings", label: "ตั้งค่า", href: "/settings", icon: Settings },
 ];
 
-export function SidebarNav({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
-  const pathname = usePathname();
+export const ALL_MENU_KEYS = NAV_ITEMS.map((it) => it.key);
 
-  const items = NAV.filter((item) => item.roles.includes(role));
+export const MENU_LABEL: Record<MenuKey, string> = NAV_ITEMS.reduce(
+  (acc, it) => ({ ...acc, [it.key]: it.label }),
+  {} as Record<MenuKey, string>,
+);
+
+export function SidebarNav({
+  permissions,
+  onNavigate,
+}: {
+  permissions: MenuKey[];
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const items = NAV_ITEMS.filter((item) => permissions.includes(item.key));
 
   return (
     <nav className="space-y-1">

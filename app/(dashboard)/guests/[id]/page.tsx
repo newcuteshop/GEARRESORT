@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarPlus, Crown } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { getGuest, getGuestBookings } from "@/lib/actions/guests";
 import { PageHeader } from "@/components/shared/page-header";
 import { GuestTypeBadge, BookingStatusBadge } from "@/components/shared/status-badge";
@@ -40,7 +40,7 @@ function pickRoom(r: Booking["room"]) {
 export default async function GuestProfilePage(props: {
   params: Promise<Params>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("guests");
   const { id } = await props.params;
   const [{ data: guest, error }, { data: bookingsRaw }] = await Promise.all([
     getGuest(id),

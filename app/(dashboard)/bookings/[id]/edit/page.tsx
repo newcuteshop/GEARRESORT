@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireMenu } from "@/lib/auth/rbac";
 import { getBooking } from "@/lib/actions/bookings";
 import { listGuests } from "@/lib/actions/guests";
 import { PageHeader } from "@/components/shared/page-header";
@@ -15,7 +15,7 @@ type Params = { id: string };
 export default async function EditBookingPage(props: {
   params: Promise<Params>;
 }) {
-  await requireRole(["admin", "receptionist"]);
+  await requireMenu("bookings");
   const { id } = await props.params;
   const [{ data: booking, error }, { data: guestsData }] = await Promise.all([
     getBooking(id),
