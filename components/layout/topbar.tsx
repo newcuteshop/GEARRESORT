@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { logoutAction } from "@/lib/actions/auth";
 import type { Role } from "@/lib/auth/rbac";
 import { MobileNav } from "./mobile-nav";
+import { CommandPaletteTrigger } from "./command-palette-trigger";
 
 const ROLE_LABEL: Record<Role, string> = {
   admin: "ผู้ดูแลระบบ",
@@ -42,6 +43,7 @@ export function Topbar({
     <header className="bg-background/85 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur sm:px-6">
       <MobileNav role={role} />
       <div className="flex-1" />
+      <CommandPaletteTrigger />
 
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -78,7 +80,7 @@ export function Topbar({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem render={<a href="/profile" />}>
             <UserIcon className="size-4" /> โปรไฟล์
           </DropdownMenuItem>
           <DropdownMenuSeparator />

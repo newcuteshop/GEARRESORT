@@ -32,6 +32,29 @@ export async function listBookings(filter?: {
   return { data };
 }
 
+export async function listBookingsForCalendar(from: string, to: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(
+      "id, booking_code, status, check_in_date, check_out_date, guest:guests(full_name), room:rooms(id, room_number)",
+    )
+    .gte("check_out_date", from)
+    .lte("check_in_date", to)
+    .not("status", "in", "(cancelled,no_show)")
+    .order("check_in_date");
+  if (error) return { error: error.message };
+
+  const { data: rooms, error: rErr } = await supabase
+    .from("rooms")
+    .select("id, room_number")
+    .eq("is_active", true)
+    .order("room_number");
+  if (rErr) return { error: rErr.message };
+
+  return { data: { bookings: data ?? [], rooms: rooms ?? [] } };
+}
+
 export async function getBooking(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -93,6 +116,20 @@ export async function listAvailableRooms(input: {
   };
 }
 
+function calcPricing(
+  basePrice: number,
+  checkIn: string,
+  checkOut: string,
+  discount: number,
+  applyVat: boolean,
+) {
+  const nights = calcNights(checkIn, checkOut);
+  const subtotal = basePrice * nights;
+  const taxableBase = Math.max(0, subtotal - discount);
+  const tax = applyVat ? Math.round(taxableBase * VAT_RATE) : 0;
+  return { nights, subtotal, tax, grand: taxableBase + tax };
+}
+
 export async function createBooking(formData: FormData): Promise<ActionResult> {
   const raw = Object.fromEntries(formData);
   const parsed = bookingSchema.safeParse({
@@ -118,12 +155,13 @@ export async function createBooking(formData: FormData): Promise<ActionResult> {
     : room.room_type;
   const basePrice = Number(roomType?.base_price ?? 0);
 
-  const nights = calcNights(parsed.data.check_in_date, parsed.data.check_out_date);
-  const subtotal = basePrice * nights;
-  const discount = parsed.data.discount_amount;
-  const taxableBase = Math.max(0, subtotal - discount);
-  const tax = parsed.data.apply_vat ? Math.round(taxableBase * VAT_RATE) : 0;
-  const grand = taxableBase + tax;
+  const { subtotal, tax, grand } = calcPricing(
+    basePrice,
+    parsed.data.check_in_date,
+    parsed.data.check_out_date,
+    parsed.data.discount_amount,
+    parsed.data.apply_vat,
+  );
 
   const { data: booking, error } = await supabase
     .from("bookings")
@@ -137,7 +175,7 @@ export async function createBooking(formData: FormData): Promise<ActionResult> {
       notes: parsed.data.notes,
       source: parsed.data.source,
       total_amount: subtotal,
-      discount_amount: discount,
+      discount_amount: parsed.data.discount_amount,
       tax_amount: tax,
       grand_total: grand,
       status: "pending",
@@ -151,7 +189,7 @@ export async function createBooking(formData: FormData): Promise<ActionResult> {
   await supabase.from("invoices").insert({
     booking_id: booking.id,
     subtotal,
-    discount,
+    discount: parsed.data.discount_amount,
     tax,
     total: grand,
     payment_status: "unpaid",
@@ -160,6 +198,67 @@ export async function createBooking(formData: FormData): Promise<ActionResult> {
   revalidatePath("/bookings");
   revalidatePath("/");
   return { data: { id: booking.id } };
+}
+
+export async function updateBooking(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = bookingSchema.safeParse({
+    ...raw,
+    apply_vat: raw.apply_vat === "on" || raw.apply_vat === "true",
+  });
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+
+  const supabase = await createClient();
+
+  const { data: room } = await supabase
+    .from("rooms")
+    .select("room_type:room_types(base_price)")
+    .eq("id", parsed.data.room_id)
+    .single();
+  const roomType = Array.isArray(room?.room_type)
+    ? room?.room_type[0]
+    : room?.room_type;
+  const basePrice = Number(roomType?.base_price ?? 0);
+
+  const { subtotal, tax, grand } = calcPricing(
+    basePrice,
+    parsed.data.check_in_date,
+    parsed.data.check_out_date,
+    parsed.data.discount_amount,
+    parsed.data.apply_vat,
+  );
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      guest_id: parsed.data.guest_id,
+      room_id: parsed.data.room_id,
+      check_in_date: parsed.data.check_in_date,
+      check_out_date: parsed.data.check_out_date,
+      num_adults: parsed.data.num_adults,
+      num_children: parsed.data.num_children,
+      notes: parsed.data.notes,
+      source: parsed.data.source,
+      total_amount: subtotal,
+      discount_amount: parsed.data.discount_amount,
+      tax_amount: tax,
+      grand_total: grand,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  await supabase
+    .from("invoices")
+    .update({ subtotal, discount: parsed.data.discount_amount, tax, total: grand })
+    .eq("booking_id", id);
+
+  revalidatePath("/bookings");
+  revalidatePath(`/bookings/${id}`);
+  return { data: { id } };
 }
 
 export async function updateBookingStatus(

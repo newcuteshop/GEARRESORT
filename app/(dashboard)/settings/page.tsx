@@ -15,6 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { APP_NAME } from "@/lib/constants";
 
@@ -38,6 +40,29 @@ export default async function SettingsPage() {
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           <Field label="ชื่อรีสอร์ท" value={APP_NAME} />
           <Field label="VAT" value="7%" />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">ส่งออกข้อมูล (CSV)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" render={
+            <a href="/api/export/bookings" download />
+          }>
+            <Download className="size-4" /> การจอง
+          </Button>
+          <Button variant="outline" size="sm" render={
+            <a href="/api/export/guests" download />
+          }>
+            <Download className="size-4" /> ลูกค้า
+          </Button>
+          <Button variant="outline" size="sm" render={
+            <a href="/api/export/invoices" download />
+          }>
+            <Download className="size-4" /> ใบแจ้งหนี้
+          </Button>
         </CardContent>
       </Card>
 

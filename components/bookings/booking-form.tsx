@@ -17,7 +17,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuestForm } from "@/components/guests/guest-form";
-import { createBooking, listAvailableRooms } from "@/lib/actions/bookings";
+import {
+  createBooking,
+  listAvailableRooms,
+  updateBooking,
+} from "@/lib/actions/bookings";
 import { formatTHB, calcNights } from "@/lib/format";
 import { VAT_RATE } from "@/lib/constants";
 
@@ -44,27 +48,58 @@ function pickType(t: RoomOption["room_type"]) {
   return Array.isArray(t) ? t[0] : t;
 }
 
+export type BookingInitialData = {
+  id: string;
+  guest_id: string;
+  room_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  num_adults: number;
+  num_children: number;
+  discount_amount: number;
+  tax_amount: number;
+  source: string | null;
+  notes: string | null;
+};
+
 export function BookingForm({
   guests,
   initialGuestId,
+  initialDate,
+  existing,
 }: {
   guests: Guest[];
   initialGuestId?: string;
+  initialDate?: string;
+  existing?: BookingInitialData;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const isEdit = !!existing;
 
-  const [guestId, setGuestId] = useState<string>(initialGuestId ?? "");
-  const [checkIn, setCheckIn] = useState<string>(today());
-  const [checkOut, setCheckOut] = useState<string>(tomorrow());
-  const [adults, setAdults] = useState<number>(2);
-  const [children, setChildren] = useState<number>(0);
-  const [discount, setDiscount] = useState<number>(0);
-  const [applyVat, setApplyVat] = useState<boolean>(false);
-  const [source, setSource] = useState<string>("walk_in");
-  const [notes, setNotes] = useState<string>("");
+  const [guestId, setGuestId] = useState<string>(
+    existing?.guest_id ?? initialGuestId ?? "",
+  );
+  const [checkIn, setCheckIn] = useState<string>(
+    existing?.check_in_date ?? initialDate ?? today(),
+  );
+  const [checkOut, setCheckOut] = useState<string>(
+    existing?.check_out_date ?? tomorrow(),
+  );
+  const [adults, setAdults] = useState<number>(existing?.num_adults ?? 2);
+  const [children, setChildren] = useState<number>(
+    existing?.num_children ?? 0,
+  );
+  const [discount, setDiscount] = useState<number>(
+    Number(existing?.discount_amount ?? 0),
+  );
+  const [applyVat, setApplyVat] = useState<boolean>(
+    Number(existing?.tax_amount ?? 0) > 0,
+  );
+  const [source, setSource] = useState<string>(existing?.source ?? "walk_in");
+  const [notes, setNotes] = useState<string>(existing?.notes ?? "");
   const [roomOptions, setRoomOptions] = useState<RoomOption[]>([]);
-  const [roomId, setRoomId] = useState<string>("");
+  const [roomId, setRoomId] = useState<string>(existing?.room_id ?? "");
   const [loadingRooms, setLoadingRooms] = useState(false);
 
   useEffect(() => {
@@ -73,13 +108,17 @@ export function BookingForm({
       return;
     }
     setLoadingRooms(true);
-    listAvailableRooms({ check_in_date: checkIn, check_out_date: checkOut })
+    listAvailableRooms({
+      check_in_date: checkIn,
+      check_out_date: checkOut,
+      excludeBookingId: existing?.id,
+    })
       .then((res) => {
         if (res.error) toast.error(res.error);
         else setRoomOptions((res.data as RoomOption[]) ?? []);
       })
       .finally(() => setLoadingRooms(false));
-  }, [checkIn, checkOut]);
+  }, [checkIn, checkOut, existing?.id]);
 
   const selectedRoom = roomOptions.find((r) => r.id === roomId) ?? null;
   const selectedType = pickType(selectedRoom?.room_type ?? null);
@@ -118,12 +157,14 @@ export function BookingForm({
     formData.set("notes", notes);
 
     startTransition(async () => {
-      const res = await createBooking(formData);
+      const res = isEdit
+        ? await updateBooking(existing.id, formData)
+        : await createBooking(formData);
       if (res.error) {
         toast.error(res.error);
         return;
       }
-      toast.success("สร้างการจองแล้ว");
+      toast.success(isEdit ? "อัปเดตการจองแล้ว" : "สร้างการจองแล้ว");
       const id =
         res.data && typeof res.data === "object"
           ? (res.data as { id?: string }).id
@@ -235,7 +276,7 @@ export function BookingForm({
               <div className="grid gap-2 sm:grid-cols-2">
                 {roomOptions.map((r) => {
                   const t = pickType(r.room_type);
-                  const disabled = r.busy;
+                  const disabled = r.busy && r.id !== existing?.room_id;
                   return (
                     <button
                       key={r.id}
@@ -347,7 +388,11 @@ export function BookingForm({
               />
             </div>
             <Button type="submit" disabled={pending} className="mt-2 w-full">
-              {pending ? "กำลังบันทึก..." : "บันทึกการจอง"}
+              {pending
+                ? "กำลังบันทึก..."
+                : isEdit
+                  ? "บันทึกการแก้ไข"
+                  : "บันทึกการจอง"}
             </Button>
           </CardContent>
         </Card>

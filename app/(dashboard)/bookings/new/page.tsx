@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { guestId?: string };
+type SearchParams = { guestId?: string; date?: string };
 
 export default async function NewBookingPage(props: {
   searchParams: Promise<SearchParams>;
@@ -31,7 +31,11 @@ export default async function NewBookingPage(props: {
         title="สร้างการจองใหม่"
         description="เลือกแขก ระบุวันที่ เลือกห้อง — ระบบคำนวณราคาให้อัตโนมัติ"
       />
-      <BookingForm guests={guests} initialGuestId={sp.guestId} />
+      <BookingForm
+        guests={guests}
+        initialGuestId={sp.guestId}
+        initialDate={sp.date}
+      />
     </div>
   );
 }

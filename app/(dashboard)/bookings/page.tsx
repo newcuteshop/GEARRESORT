@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BookingsTabs } from "@/components/bookings/bookings-tabs";
 import { formatTHB, formatDateShort, calcNights } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -79,30 +80,32 @@ export default async function BookingsListPage(props: {
         }
       />
 
-      <form className="flex max-w-xs gap-2">
-        <Select name="status" defaultValue={sp.status ?? ""}>
-          <SelectTrigger>
-            <SelectValue placeholder="กรองตามสถานะ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">ทั้งหมด</SelectItem>
-            <SelectItem value="pending">รอยืนยัน</SelectItem>
-            <SelectItem value="confirmed">ยืนยันแล้ว</SelectItem>
-            <SelectItem value="checked_in">Check-in</SelectItem>
-            <SelectItem value="checked_out">Check-out</SelectItem>
-            <SelectItem value="cancelled">ยกเลิก</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button type="submit" variant="outline">
-          กรอง
-        </Button>
-      </form>
+      <BookingsTabs>
+        <div className="space-y-4">
+        <form className="flex max-w-xs gap-2">
+          <Select name="status" defaultValue={sp.status ?? ""}>
+            <SelectTrigger>
+              <SelectValue placeholder="กรองตามสถานะ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">ทั้งหมด</SelectItem>
+              <SelectItem value="pending">รอยืนยัน</SelectItem>
+              <SelectItem value="confirmed">ยืนยันแล้ว</SelectItem>
+              <SelectItem value="checked_in">Check-in</SelectItem>
+              <SelectItem value="checked_out">Check-out</SelectItem>
+              <SelectItem value="cancelled">ยกเลิก</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button type="submit" variant="outline">
+            กรอง
+          </Button>
+        </form>
 
-      {error && (
-        <div className="text-destructive text-sm">เกิดข้อผิดพลาด: {error}</div>
-      )}
+        {error && (
+          <div className="text-destructive text-sm">เกิดข้อผิดพลาด: {error}</div>
+        )}
 
-      {bookings.length === 0 ? (
+        {bookings.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="ยังไม่มีการจอง"
@@ -166,7 +169,9 @@ export default async function BookingsListPage(props: {
             </TableBody>
           </Table>
         </div>
-      )}
+        )}
+        </div>
+      </BookingsTabs>
     </div>
   );
 }

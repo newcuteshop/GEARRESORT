@@ -12,10 +12,14 @@ import {
   getDashboardStats,
   getTodaySchedule,
   getRecentBookings,
+  getRevenue7d,
+  getRoomStatusBreakdown,
 } from "@/lib/actions/dashboard";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatsCard } from "@/components/shared/stats-card";
 import { BookingStatusBadge } from "@/components/shared/status-badge";
+import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { RoomStatusDonut } from "@/components/dashboard/room-status-donut";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatTHB, formatDateShort } from "@/lib/format";
@@ -61,15 +65,24 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 
 export default async function DashboardPage() {
   const user = await requireAuth();
-  const [{ data: statsData }, { data: scheduleData }, { data: recentData }] =
-    await Promise.all([
-      getDashboardStats(),
-      getTodaySchedule(),
-      getRecentBookings(),
-    ]);
+  const [
+    { data: statsData },
+    { data: scheduleData },
+    { data: recentData },
+    { data: revenueData },
+    { data: statusCounts },
+  ] = await Promise.all([
+    getDashboardStats(),
+    getTodaySchedule(),
+    getRecentBookings(),
+    getRevenue7d(),
+    getRoomStatusBreakdown(),
+  ]);
   const stats = (statsData as Stats) ?? null;
   const schedule = (scheduleData as Schedule[] | null) ?? [];
   const recent = (recentData as Recent[] | null) ?? [];
+  const revenue = (revenueData as { date: string; total: number }[] | null) ?? [];
+  const counts = (statusCounts as Record<string, number> | null) ?? {};
 
   const occupancy =
     stats && stats.total_rooms > 0
@@ -125,6 +138,25 @@ export default async function DashboardPage() {
           hint={`วันนี้ ${formatTHB(Number(stats?.todays_revenue ?? 0))}`}
           tone="emerald"
         />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">ยอดจอง 7 วันย้อนหลัง</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RevenueChart data={revenue} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">สถานะห้องพัก</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RoomStatusDonut counts={counts} />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

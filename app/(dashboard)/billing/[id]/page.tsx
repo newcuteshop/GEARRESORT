@@ -10,6 +10,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { PaymentStatusBadge } from "@/components/shared/status-badge";
 import { PaymentForm } from "@/components/billing/payment-form";
+import { InvoicePrintButton } from "@/components/billing/invoice-print-button";
 import {
   InvoiceItemForm,
   DeleteItemButton,
@@ -91,10 +92,15 @@ export default async function InvoiceDetailPage(props: {
           <h1 className="font-serif text-3xl">{invoice.invoice_number}</h1>
           <PaymentStatusBadge status={invoice.payment_status} />
         </div>
-        {balance > 0 && (
-          <PaymentForm invoiceId={invoice.id} balance={balance} />
-        )}
+        <div className="flex flex-wrap gap-2">
+          <InvoicePrintButton invoiceNumber={invoice.invoice_number} />
+          {balance > 0 && (
+            <PaymentForm invoiceId={invoice.id} balance={balance} />
+          )}
+        </div>
       </div>
+
+      <div id="invoice-printable" className="space-y-4">
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -223,6 +229,8 @@ export default async function InvoiceDetailPage(props: {
           <Row label="คงเหลือ" value={formatTHB(balance)} bold />
         </CardContent>
       </Card>
+
+      </div>
 
       <PageHeader title="ประวัติการชำระเงิน" />
       {(payments ?? []).length === 0 ? (

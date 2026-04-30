@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Receipt } from "lucide-react";
+import { ArrowLeft, Receipt, Pencil } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { getBooking, getBookingInvoice } from "@/lib/actions/bookings";
 import { PageHeader } from "@/components/shared/page-header";
@@ -68,7 +68,18 @@ export default async function BookingDetailPage(props: {
             )}
           </div>
         </div>
-        <BookingActions bookingId={booking.id} status={booking.status} />
+        <div className="flex flex-wrap gap-2">
+          {!["checked_out", "cancelled", "no_show"].includes(booking.status) && (
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href={`/bookings/${booking.id}/edit`} />}
+            >
+              <Pencil className="size-4" /> แก้ไข
+            </Button>
+          )}
+          <BookingActions bookingId={booking.id} status={booking.status} />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
