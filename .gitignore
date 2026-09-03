@@ -49,3 +49,9 @@ supabase/.branches/
 next-env.d.ts
 
 .vercel
+
+# keep-alive helpers (มี anon key / log เฉพาะเครื่อง — repo เป็น public)
+KEEPALIVE_URL.txt
+scripts/keepalive.cmd
+scripts/keepalive.log
+supabase/migrations/FULL_SCHEMA.sql

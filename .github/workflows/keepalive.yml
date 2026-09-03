@@ -1,0 +1,46 @@
+name: Supabase keep-alive
+
+# Supabase Free tier พัก project อัตโนมัติเมื่อไม่มี request ติดต่อกัน 7 วัน
+# workflow นี้ยิง query จริงเข้า Postgres ทุกวัน เพื่อไม่ให้ถูกพัก
+on:
+  schedule:
+    - cron: "0 2 * * *" # ทุกวัน 02:00 UTC = 09:00 เวลาไทย
+  workflow_dispatch: # กดรันเองได้จากหน้า Actions
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          code=$(curl -s -o body.txt -w '%{http_code}' --max-time 30 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/room_types?select=id&limit=1")
+          echo "HTTP $code — body: $(cat body.txt)"
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase ping failed (HTTP $code) — project อาจถูก pause แล้ว"
+            exit 1
+          fi
+          echo "Supabase ตื่นอยู่ปกติ"
+
+      # GitHub ปิด scheduled workflow ของ repo ที่ไม่มี activity 60 วัน
+      # commit เดือนละครั้งเพื่อรีเซ็ตตัวนับนั้น
+      - name: Monthly heartbeat commit
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%d)" != "01" ]; then
+            echo "ไม่ใช่วันที่ 1 — ข้าม"
+            exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo
+          cd repo
+          mkdir -p .github
+          date -u +"last keep-alive heartbeat: %Y-%m-%d %H:%M UTC" > .github/last-heartbeat.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-heartbeat.txt
+          git commit -m "chore: keep-alive heartbeat" || exit 0
+          git push
